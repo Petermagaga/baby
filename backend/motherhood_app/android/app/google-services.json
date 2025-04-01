@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "216557505110",
+    "project_id": "achiever-2e982",
+    "storage_bucket": "achiever-2e982.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:216557505110:android:6bd18b120b50e59e0849f7",
+        "android_client_info": {
+          "package_name": "com.example.pregnancyapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAPtK-KHAqyRqwYnm-W6ovTOx_o9er0IU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

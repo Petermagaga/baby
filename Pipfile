@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+djangorestframework = "*"
+djangorestframework-simplejwt = "*"
+psycopg2-binary = "*"
+redis = "*"
+channels = "*"
+daphne = "*"
+django-cors-headers = "*"
+celery = "*"
+django-celery-beat = "*"
+twilio = "*"
+openai = "*"
+python-dotenv = "*"
+django = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.13"
