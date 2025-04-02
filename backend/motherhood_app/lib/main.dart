@@ -16,6 +16,7 @@ import 'screens/immunization_screen.dart';
 import 'screens/baby_tracker_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/faq_screen.dart';
+import 'screens/emergency_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +61,8 @@ class _MyAppState extends State<MyApp> {
         '/immunization': (context) => ImmunizationScreen(),
         '/baby-tracker': (context) => BabyTrackerScreen(),
         '/faq': (context) => FAQScreen(),
+        '/emergency':(context) =>EmergencyScreen()
+        
       },
       onGenerateRoute: (settings) {
         if (settings.name == "/profile") {

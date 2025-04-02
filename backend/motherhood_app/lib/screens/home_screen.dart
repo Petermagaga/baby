@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
@@ -11,9 +12,14 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   User? user;
   bool _isChatOpen = false;
+  bool _isEmergencyOpen = false;
+
+  late AnimationController _controller;
+  late Animation<double> _wiggleAnimation;
+
   final TextEditingController _chatController = TextEditingController();
   List<Map<String, String>> _messages = [];
   bool _isLoading = false;
@@ -22,6 +28,23 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
+
+    // Animation controller for wiggling effect
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..repeat(reverse: true);
+
+    _wiggleAnimation = Tween<double>(begin: -10, end: 10).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.elasticInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _chatController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchUserData() async {
@@ -35,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _sendMessage(String message) async {
-    if (message.trim().isEmpty) return; // Prevent sending empty messages
+    if (message.trim().isEmpty) return;
 
     setState(() {
       _messages.add({"user": message});
@@ -56,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       final response = await http.post(
-        Uri.parse("http://127.0.0.1:8000/api/chatbot/ask/"), // Replace with actual API URL
+        Uri.parse("http://127.0.0.1:8000/api/chatbot/ask/"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",
@@ -87,6 +110,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _callEmergency() async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: '911');
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to make a call")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     String userName = user?.displayName ?? "User";
@@ -103,11 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 10),
             Text(
               "Hello, $userName! 👋",
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
           ],
         ),
@@ -135,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              children: [
+              children: const [
                 FeatureCard(icon: Icons.help_outline, label: "FAQ", route: "/faq", color: Colors.blueAccent),
                 FeatureCard(icon: Icons.pregnant_woman, label: "Pregnancy Tracker", route: "/pregnancy-tracker", color: Colors.pinkAccent),
                 FeatureCard(icon: Icons.baby_changing_station, label: "Baby Tracker", route: "/baby-tracker", color: Colors.teal),
@@ -146,98 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          if (_isChatOpen)
-            Positioned(
-              bottom: 80,
-              right: 20,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: MediaQuery.of(context).size.width * 0.35,
-                height: _messages.isEmpty ? 80 : 140,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 6,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    if (_messages.isNotEmpty)
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: _messages.length,
-                          itemBuilder: (context, index) {
-                            final message = _messages[index];
-                            final isUser = message.containsKey("user");
-
-                            return Align(
-                              alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(vertical: 4),
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isUser ? Colors.blueAccent : Colors.grey.shade200,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  message.values.first,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: isUser ? Colors.white : Colors.black87,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-
-                    if (_isLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 4),
-                        child: SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _chatController,
-                            decoration: InputDecoration(
-                              hintText: "Type...",
-                              hintStyle: const TextStyle(fontSize: 12),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              contentPadding: const EdgeInsets.all(6),
-                            ),
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.send, color: Colors.blueAccent, size: 18),
-                          onPressed: () {
-                            if (_chatController.text.isNotEmpty) {
-                              _sendMessage(_chatController.text);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
           Positioned(
             bottom: 20,
             right: 20,
@@ -251,13 +189,44 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Icon(_isChatOpen ? Icons.close : Icons.chat),
             ),
           ),
+
+          AnimatedBuilder(
+            animation: _wiggleAnimation,
+            builder: (context, child) {
+              return Positioned(
+                right: 10 + _wiggleAnimation.value,
+                top: MediaQuery.of(context).size.height / 2 - 30,
+                child: FloatingActionButton(
+                  backgroundColor: const Color.fromARGB(255, 176, 193, 20),
+                  onPressed: () {
+                    setState(() {
+                      _isEmergencyOpen = !_isEmergencyOpen;
+                    });
+                  },
+                  child: const Icon(Icons.safety_check, size: 24),
+                ),
+              );
+            },
+          ),
+
+          if (_isEmergencyOpen)
+            Positioned(
+              bottom: 140,
+              right: 20,
+              child: FloatingActionButton(
+                backgroundColor: const Color.fromARGB(255, 221, 51, 212),
+                onPressed: () {
+                  Navigator.pushNamed(context, "/emergency");
+                },
+                child: const Icon(Icons.phone),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-// ✅ **Fixed: FeatureCard Widget**
 class FeatureCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -271,18 +240,11 @@ class FeatureCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, route),
       child: Container(
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(10),
-        ),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
         padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 30),
-            const SizedBox(height: 8),
-            Text(label, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 14)),
-          ],
+          children: [Icon(icon, color: Colors.white, size: 30), Text(label, style: const TextStyle(color: Colors.white))],
         ),
       ),
     );

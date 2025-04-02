@@ -20,14 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   double _opacity = 0.0;
   int profileCompletion = 0;
-  Map<String, dynamic> profileData = {
-    "username": "",
-    "age": "",
-    "location": "",
-    "job_type": "",
-    "health_conditions": "",
-    "profile_picture": "",
-  };
+  Map<String, dynamic> profileData = {};
 
   final usernameController = TextEditingController();
   final ageController = TextEditingController();
@@ -42,20 +35,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     Future.delayed(Duration(milliseconds: 300), () {
       if (mounted) {
-        setState(() {
-          _opacity = 1.0;
-        });
+        setState(() => _opacity = 1.0);
       }
     });
+    
     loadProfile();
     loadProfileCompletion();
   }
 
-  /// **Load Profile Data**
   Future<void> loadProfile() async {
     try {
       Map<String, dynamic> data = await ProfileService.fetchProfile();
-      if (data.isNotEmpty && mounted) {
+      if (mounted) {
         setState(() {
           profileData = data;
           usernameController.text = data["username"] ?? "";
@@ -66,53 +57,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error loading profile: $e"), backgroundColor: Colors.red),
-        );
-      }
+      showError("Error loading profile: $e");
     }
   }
 
-  /// **Load Profile Completion Percentage**
   Future<void> loadProfileCompletion() async {
     try {
-      int completion = await ProfileService.fetchProfileCompletion();
+
+      String username = usernameController.text.trim(); // Ensure no extra spaces
+      if (username.isEmpty) {
+        print("Error: Username is empty");
+        return;
+      }
+
+      int completion = await ProfileService.fetchProfileCompletion(usernameController.text);
       if (mounted) {
-        setState(() {
-          profileCompletion = completion;
-        });
+        setState(() => profileCompletion = completion);
       }
     } catch (e) {
       print("Error: $e");
     }
   }
 
-  /// **Pick Image for Profile Picture**
   Future<void> _pickImage() async {
     try {
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
       if (pickedFile != null) {
-        setState(() {
-          _image = File(pickedFile.path);
-        });
+        setState(() => _image = File(pickedFile.path));
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error picking image: $e"), backgroundColor: Colors.red),
-        );
-      }
+      showError("Error picking image: $e");
     }
   }
 
-  /// **Update Profile**
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       Map<String, dynamic> updatedData = {
@@ -128,47 +108,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await ProfileService.uploadProfilePicture(_image!.path);
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Profile updated successfully!"), backgroundColor: Colors.green),
-        );
-        loadProfile();
-        loadProfileCompletion();
-      }
+      showSuccess("Profile updated successfully!");
+      loadProfile();
+      loadProfileCompletion();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
-      }
+      showError("Error: $e");
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() => _isLoading = false);
     }
   }
 
-  /// **Update Password**
   Future<void> _updatePassword() async {
     if (passwordController.text != confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Passwords do not match!"), backgroundColor: Colors.red),
-      );
+      showError("Passwords do not match!");
       return;
     }
 
     try {
-      await ProfileService.updatePassword(passwordController.text);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Password updated!"), backgroundColor: Colors.green),
-      );
+      await ProfileService.updatePassword(usernameController.text,passwordController.text);
+      showSuccess("Password updated!");
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-      );
+      showError("Error: $e");
     }
+  }
+
+  void showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
+  }
+
+  void showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.green));
   }
 
   @override
@@ -184,7 +153,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             key: _formKey,
             child: Column(
               children: [
-                /// **Profile Picture**
                 CircleAvatar(
                   radius: 50,
                   backgroundImage: _image != null
@@ -192,13 +160,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       : (profileData["profile_picture"]?.isNotEmpty ?? false)
                           ? NetworkImage(profileData["profile_picture"])
                           : AssetImage('assets/default_profile.png') as ImageProvider,
-                  onBackgroundImageError: (_, __) {
-                    if (mounted) {
-                      setState(() {
-                        profileData["profile_picture"] = "";
-                      });
-                    }
-                  },
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -222,24 +183,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 SizedBox(height: 20),
-
-                /// **Profile Completion Progress Bar**
                 Text("Profile Completion", style: TextStyle(fontSize: 18)),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: LinearProgressIndicator(
-                    value: profileCompletion / 100,
-                    backgroundColor: Colors.grey[300],
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                  ),
-                ),
-                Text("$profileCompletion% completed", style: TextStyle(fontSize: 16)),
-
-                /// **Save Profile Updates**
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _updateProfile,
-                  child: _isLoading ? CircularProgressIndicator(color: Colors.white) : Text("Save Changes"),
-                ),
+                LinearProgressIndicator(value: profileCompletion / 100),
+                Text("$profileCompletion% completed"),
+                SizedBox(height: 20),
+                Text("Change Password", style: TextStyle(fontSize: 18)),
+                TextFormField(controller: passwordController, obscureText: true, decoration: InputDecoration(labelText: "New Password")),
+                TextFormField(controller: confirmPasswordController, obscureText: true, decoration: InputDecoration(labelText: "Confirm New Password")),
+                ElevatedButton(onPressed: _isLoading ? null : _updateProfile, child: Text("Save Profile Changes")),
+                ElevatedButton(onPressed: _isLoading ? null : _updatePassword, child: Text("Update Password")),
               ],
             ),
           ),

@@ -38,3 +38,12 @@ class LoginSerializer(serializers.Serializer):
             refresh = RefreshToken.for_user(user)
             return {'refresh': str(refresh), 'access': str(refresh.access_token)}
         raise serializers.ValidationError("Invalid credentials")
+
+class UpdatePasswordSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_new_password(self, value):
+        """Ensure password meets security requirements."""
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        return value
