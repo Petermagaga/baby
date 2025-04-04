@@ -21,6 +21,7 @@ urlpatterns = [
     path('api/chatbot/',include('chatbot.urls')),
     path('api/journal/',include('journal.urls')),
     path('api/mental_health/',include('mental_health.urls')),
+    path('api/friends/',include('friends.urls')),
 ]
 
 if settings.DEBUG:

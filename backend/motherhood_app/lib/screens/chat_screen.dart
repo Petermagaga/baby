@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
-
 class ChatScreen extends StatelessWidget {
   final String groupTitle;
 
-  ChatScreen({required this.groupTitle});
+  ChatScreen({required this.groupTitle}); // Constructor to receive groupTitle
   
   @override
   Widget build(BuildContext context) {
+    // You don't need to get groupTitle from ModalRoute anymore because it's already passed
     return Scaffold(
-      appBar: AppBar(title: Text(groupTitle)),
+      appBar: AppBar(title: Text(groupTitle)), // Use the passed groupTitle
       body: Column(
         children: [
           Expanded(child: Center(child: Text("Chat messages will appear here."))),

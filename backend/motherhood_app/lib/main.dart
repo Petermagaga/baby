@@ -17,6 +17,8 @@ import 'screens/baby_tracker_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/faq_screen.dart';
 import 'screens/emergency_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/find_friend_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,8 +63,12 @@ class _MyAppState extends State<MyApp> {
         '/immunization': (context) => ImmunizationScreen(),
         '/baby-tracker': (context) => BabyTrackerScreen(),
         '/faq': (context) => FAQScreen(),
-        '/emergency':(context) =>EmergencyScreen()
-        
+        '/emergency':(context) =>EmergencyScreen(),
+        '/chat':(context){
+  final groupTitle = ModalRoute.of(context)!.settings.arguments as String;
+  return ChatScreen(groupTitle: groupTitle); // Pass the groupTitle to the ChatScreen
+},
+        '/find_friend': (context) => FindFriendScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == "/profile") {

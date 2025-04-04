@@ -33,14 +33,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+
     Future.delayed(Duration(milliseconds: 300), () {
       if (mounted) {
         setState(() => _opacity = 1.0);
       }
     });
-    
-    loadProfile();
-    loadProfileCompletion();
+
+    loadProfile().then((_) {
+      if (mounted && usernameController.text.isNotEmpty) {
+        loadProfileCompletion();
+      } else {
+        print("Skipping profile completion fetch: Username is empty");
+      }
+    });
   }
 
   Future<void> loadProfile() async {
@@ -63,19 +69,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> loadProfileCompletion() async {
     try {
-
-      String username = usernameController.text.trim(); // Ensure no extra spaces
+      String username = usernameController.text.trim();
       if (username.isEmpty) {
-        print("Error: Username is empty");
+        print("Skipping profile completion fetch: Username is empty");
         return;
       }
 
-      int completion = await ProfileService.fetchProfileCompletion(usernameController.text);
+      int completion = await ProfileService.fetchProfileCompletion(username);
       if (mounted) {
         setState(() => profileCompletion = completion);
       }
     } catch (e) {
-      print("Error: $e");
+      print("Error fetching profile completion: $e");
     }
   }
 
@@ -97,7 +102,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       Map<String, dynamic> updatedData = {
         "username": usernameController.text,
-        "age": ageController.text.isNotEmpty ? int.tryParse(ageController.text) ?? 0 : null,
+        "age": ageController.text.isNotEmpty
+            ? int.tryParse(ageController.text) ?? 0
+            : null,
         "location": locationController.text,
         "job_type": jobTypeController.text,
         "health_conditions": healthConditionsController.text,
@@ -119,25 +126,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _updatePassword() async {
+    String username = usernameController.text.trim();
+    
+    if (username.isEmpty) {
+      showError("Error: Username is empty. Reload the profile.");
+      return;
+    }
+
+    if (passwordController.text.isEmpty || confirmPasswordController.text.isEmpty) {
+      showError("Error: Password fields cannot be empty.");
+      return;
+    }
+
     if (passwordController.text != confirmPasswordController.text) {
       showError("Passwords do not match!");
       return;
     }
 
     try {
-      await ProfileService.updatePassword(usernameController.text,passwordController.text);
+      await ProfileService.updatePassword(username, passwordController.text);
       showSuccess("Password updated!");
     } catch (e) {
-      showError("Error: $e");
+      showError("Error updating password: $e");
     }
   }
 
   void showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   void showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
+    );
   }
 
   @override
@@ -188,10 +211,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Text("$profileCompletion% completed"),
                 SizedBox(height: 20),
                 Text("Change Password", style: TextStyle(fontSize: 18)),
-                TextFormField(controller: passwordController, obscureText: true, decoration: InputDecoration(labelText: "New Password")),
-                TextFormField(controller: confirmPasswordController, obscureText: true, decoration: InputDecoration(labelText: "Confirm New Password")),
-                ElevatedButton(onPressed: _isLoading ? null : _updateProfile, child: Text("Save Profile Changes")),
-                ElevatedButton(onPressed: _isLoading ? null : _updatePassword, child: Text("Update Password")),
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(labelText: "New Password"),
+                ),
+                TextFormField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: InputDecoration(labelText: "Confirm New Password"),
+                ),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _updateProfile,
+                  child: Text("Save Profile Changes"),
+                ),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _updatePassword,
+                  child: Text("Update Password"),
+                ),
               ],
             ),
           ),

@@ -53,15 +53,19 @@ class ProfileService {
   /// **Update Password**
   static Future<void> updatePassword(String username,String newPassword) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/profile/update-password/"),
+      Uri.parse("$baseUrl/api/users/profile/update-password/"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "username":username,
         "password": newPassword}),
     );
 
-    if (response.statusCode != 200) {
+    if (response.statusCode == 200) {
+      print("Password updated successfully.");
+    } else {
+      print("Error updating password: ${response.statusCode}");
+      print("Response: ${response.body}");
       throw Exception("Failed to update password");
     }
-  }
+  } 
 }

@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'chatbot',
     'journal',
     'mental_health',
+    'friends',
 
 ]
 
