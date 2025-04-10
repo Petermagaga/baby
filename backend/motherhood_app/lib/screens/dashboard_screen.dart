@@ -10,17 +10,15 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  User? user; // Firebase user
+  User? user;
 
   @override
   void initState() {
     super.initState();
-    _fetchUser();
-  }
-
-  void _fetchUser() {
-    setState(() {
-      user = FirebaseAuth.instance.currentUser;
+    FirebaseAuth.instance.authStateChanges().listen((User? updatedUser) {
+      setState(() {
+        user = updatedUser;
+      });
     });
   }
 
@@ -30,7 +28,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Colors.grey[200],
       drawer: _buildSidebar(),
       appBar: AppBar(
-        title: Text("Welcome back, ${user?.displayName ?? "User"}!"), // ✅ Fetch username dynamically
+        title: Text("Welcome back, ${user?.displayName ?? "User"}!"),
         backgroundColor: const Color.fromARGB(255, 159, 76, 165),
       ),
       body: Padding(
@@ -38,22 +36,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Top Statistics Card
             _buildMainStatsCard(),
-
             const SizedBox(height: 20),
-
-            // 🔹 Bottom Row with Circular Charts & Rankings
             Expanded(
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Circular Progress Indicators
                   Expanded(child: _buildCircularProgressStats()),
-
                   const SizedBox(width: 20),
-
-                  // Rankings
                   Expanded(child: _buildRankingTable()),
                 ],
               ),
@@ -64,18 +53,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔥 Sidebar Navigation Menu
   Widget _buildSidebar() {
     return Drawer(
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            accountName: Text(user?.displayName ?? "Guest User"), // ✅ Dynamic Name
-            accountEmail: Text(user?.email ?? "No email found"), // ✅ Dynamic Email
+            accountName: Text(user?.displayName ?? "Guest User"),
+            accountEmail: Text(user?.email ?? "No email found"),
             currentAccountPicture: CircleAvatar(
               backgroundImage: NetworkImage(user?.photoURL ?? "https://via.placeholder.com/150"),
             ),
-            decoration: BoxDecoration(color: Colors.green[700]),
+            decoration: const BoxDecoration(color: Color.fromARGB(255, 222, 180, 15)),
           ),
           _buildDrawerItem(Icons.dashboard, "Dashboard"),
           _buildDrawerItem(Icons.analytics, "Analytics"),
@@ -87,7 +75,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔹 Drawer Item
   Widget _buildDrawerItem(IconData icon, String title, {bool isLogout = false}) {
     return ListTile(
       leading: Icon(icon, color: isLogout ? Colors.red : Colors.black54),
@@ -95,13 +82,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: () async {
         if (isLogout) {
           await FirebaseAuth.instance.signOut();
-          Navigator.pushReplacementNamed(context, "/login"); // Redirect to login screen
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, "/login");
+          }
         }
       },
     );
   }
 
-  /// 🔹 Top Card with Graph & Stats
   Widget _buildMainStatsCard() {
     return Card(
       elevation: 5,
@@ -111,13 +99,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Dashboard Overview",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text("Dashboard Overview", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             _buildLineChart(),
             const SizedBox(height: 10),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildStatTile("Orders", "4,321", Colors.green),
                 _buildStatTile("Revenue", "\$12,500", Colors.blue),
@@ -130,7 +117,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔹 Line Chart Widget
   Widget _buildLineChart() {
     return SizedBox(
       height: 150,
@@ -141,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           borderData: FlBorderData(show: true),
           lineBarsData: [
             LineChartBarData(
-              spots: [
+              spots: const [
                 FlSpot(1, 1),
                 FlSpot(2, 3),
                 FlSpot(3, 2.5),
@@ -149,14 +135,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 FlSpot(5, 3.8),
               ],
               isCurved: true,
-              gradient: LinearGradient(colors: [Colors.green, Colors.blue]),
+              gradient: const LinearGradient(colors: [Colors.green, Colors.blue]),
               barWidth: 4,
               belowBarData: BarAreaData(
                 show: true,
-                gradient: LinearGradient(colors: [
-                  Colors.green.withOpacity(0.3),
-                  Colors.blue.withOpacity(0.3)
-                ]),
+                gradient: LinearGradient(
+                  colors: [Colors.green.withOpacity(0.3), Colors.blue.withOpacity(0.3)],
+                ),
               ),
             ),
           ],
@@ -165,7 +150,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔹 Mini Statistics Tile
   Widget _buildStatTile(String label, String value, Color color) {
     return Column(
       children: [
@@ -175,7 +159,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔹 Circular Progress Stats Section
   Widget _buildCircularProgressStats() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +176,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔹 Circular Progress Indicator
   Widget _buildCircularStat(double percentage, String label) {
     return Column(
       children: [
@@ -219,7 +201,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔹 Rankings Table
   Widget _buildRankingTable() {
     return Card(
       elevation: 3,
@@ -248,7 +229,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// 🔹 Data Row for Table
   DataRow _buildDataRow(String name, String score) {
     return DataRow(cells: [DataCell(Text(name)), DataCell(Text(score))]);
   }

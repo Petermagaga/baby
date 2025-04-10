@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'firebase_storage_service.dart'; // Ensure this is your service that handles Firebase storage
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
@@ -7,6 +8,8 @@ import 'package:mime/mime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+
 
 class AuthService {
   static const String _loginUrl = "http://127.0.0.1:8000/api/token/";
@@ -32,7 +35,7 @@ class AuthService {
     }
   }
 
-  // ✅ REGISTRATION FUNCTION WITH MULTIPART
+  // ✅ REGISTRATION FUNCTION WITH IMAGE UPLOAD TO FIREBASE
   Future<bool> register({
     required String username,
     required String email,
@@ -44,39 +47,35 @@ class AuthService {
     XFile? profileImage,
   }) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse(_registerUrl));
-
-      request.fields['username'] = username;
-      request.fields['email'] = email;
-      request.fields['password'] = password;
-      if (age != null) request.fields['age'] = age;
-      if (healthConditions != null) request.fields['health_conditions'] = healthConditions;
-      if (location != null) request.fields['location'] = location;
-      if (jobType != null) request.fields['job_type'] = jobType;
-
+      String? imageUrl;
       if (profileImage != null) {
-        final file = File(profileImage.path);
-        final mimeType = lookupMimeType(file.path) ?? 'image/jpeg';
-
-        request.files.add(await http.MultipartFile.fromPath(
-          'profile_picture',
-          file.path,
-          contentType: MediaType.parse(mimeType),
-          filename: basename(file.path),
-        ));
+        imageUrl = await uploadProfileImageToFirebase(profileImage); // Upload image to Firebase and get URL
       }
 
-      final response = await request.send();
+      final response = await http.post(
+        Uri.parse(_registerUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'username': username,
+          'email': email,
+          'password': password,
+          'age': age,
+          'health_conditions': healthConditions,
+          'location': location,
+          'job_type': jobType,
+          'profile_picture': imageUrl, // Send the image URL to Django
+        }),
+      );
 
       if (response.statusCode == 201) {
         print("✅ Registration successful");
         return true;
       } else {
-        print("❌ Registration failed: ${await response.stream.bytesToString()}");
+        print('❌ Registration failed: ${response.body}');
         return false;
       }
     } catch (e) {
-      print("❌ Registration error: $e");
+      print('❌ Registration error: $e');
       return false;
     }
   }
@@ -127,5 +126,21 @@ class AuthService {
   // 🔎 IS LOGGED IN
   Future<bool> isAuthenticated() async {
     return (await getToken()) != null;
+  }
+
+  // 🔥 UPLOAD IMAGE TO FIREBASE (FIREBASE STORAGE SERVICE)
+  Future<String?> uploadProfileImageToFirebase(XFile imageFile) async {
+    try {
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_images/${DateTime.now().millisecondsSinceEpoch}_${imageFile.name}');
+      
+      final uploadTask = await storageRef.putFile(File(imageFile.path));
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      print('❌ Upload error: $e');
+      return null;
+    }
   }
 }
