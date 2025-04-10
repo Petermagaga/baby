@@ -60,6 +60,9 @@ INSTALLED_APPS = [
     'journal',
     'mental_health',
     'friends',
+    'immunization',
+    'babydiet',
+   
 
 ]
 

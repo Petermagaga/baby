@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.conf import settings
 from math import radians, sin, cos, sqrt, atan2
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="friends_profile")
     age = models.IntegerField(null=True, blank=True)
     location = models.CharField(max_length=255, null=True, blank=True)  # City or GPS coordinates
     latitude = models.FloatField(null=True, blank=True)  # User latitude

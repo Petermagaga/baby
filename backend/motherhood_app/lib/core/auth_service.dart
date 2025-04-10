@@ -8,7 +8,7 @@ class AuthService {
   static const String refreshUrl = "http://127.0.0.1:8000/api/token/refresh/";
 
   // 🔹 Register User
-  Future<bool> register(String username, String email, String password) async {
+  Future<bool> register(String username, String email, String password, {required String healthConditions}) async {
     final url = Uri.parse('$baseUrl/register/');
     final response = await http.post(
       url,

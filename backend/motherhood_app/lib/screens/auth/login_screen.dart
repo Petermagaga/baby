@@ -1,31 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:motherhood_app/services/auth_service.dart'; // Import AuthService
+import '../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final AuthService _authService = AuthService();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _loading = false;
 
-  Future<void> _login() async {
-    setState(() => _loading = true);
-    String username = _usernameController.text.trim();
-    String password = _passwordController.text.trim();
+  void _login() async {
+    if (!_formKey.currentState!.validate()) return;
 
-    bool success = await _authService.login(username, password);
+    setState(() => _loading = true);
+
+    bool success = await AuthService().login(
+      _usernameController.text.trim(),
+      _passwordController.text.trim(),
+    );
+
     setState(() => _loading = false);
 
     if (success) {
-      print("✅ Logged in successfully!");
-      Navigator.pushReplacementNamed(context, '/home'); // Navigate to home
+      Navigator.pushReplacementNamed(context, '/dashboard');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ Login Failed! Check credentials.")),
+        const SnackBar(content: Text("Login failed! Please check your credentials.")),
       );
     }
   }
@@ -33,133 +38,80 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Circles
-          Positioned(
-            top: -100,
-            right: -100,
-            child: CircleAvatar(
-              radius: 150,
-              backgroundColor: Colors.orangeAccent.withOpacity(0.3),
-            ),
-          ),
-          Positioned(
-            bottom: -100,
-            left: -100,
-            child: CircleAvatar(
-              radius: 150,
-              backgroundColor: Colors.pinkAccent.withOpacity(0.3),
-            ),
-          ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 60.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              const Icon(Icons.lock, size: 80, color: Colors.deepPurple),
+              const SizedBox(height: 30),
+              const Text(
+                "Welcome Back!",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 30),
 
-          // Login Form
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "LOGO",
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 40),
+              _buildTextField(_usernameController, 'Username', Icons.person),
+              _buildTextField(
+                _passwordController,
+                'Password',
+                Icons.lock,
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Enter your password';
+                  if (value.length < 6) return 'Minimum 6 characters';
+                  return null;
+                },
+              ),
 
-                  // Username Field
-                  _buildTextField(_usernameController, "Username or Email", Icons.person),
-
-                  // Password Field
-                  _buildTextField(_passwordController, "Password", Icons.lock, obscureText: true),
-
-                  const SizedBox(height: 20),
-
-                  // Login Button
-                  _loading
-                      ? const CircularProgressIndicator()
-                      : SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _login,
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              backgroundColor: Colors.orangeAccent,
-                            ),
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(fontSize: 18, color: Colors.white),
-                            ),
+              const SizedBox(height: 25),
+              _loading
+                  ? const CircularProgressIndicator()
+                  : SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _login,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-
-                  const SizedBox(height: 30),
-
-                  // Social Login Icons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _socialButton(Icons.g_mobiledata, Colors.red),
-                      const SizedBox(width: 20),
-                      _socialButton(Icons.facebook, Colors.blue),
-                      const SizedBox(width: 20),
-                      _socialButton(Icons.chat, Colors.lightBlue),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Sign Up Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Don't have an account?"),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/register');
-                        },
-                        child: const Text("Sign Up"),
+                        child: const Text('Login', style: TextStyle(fontSize: 18)),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                    ),
 
-  /// 🔥 **TextField Builder**
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool obscureText = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon),
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.8),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => Navigator.pushReplacementNamed(context, '/register'),
+                child: const Text("Don't have an account? Register"),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// 🔥 **Social Button Builder**
-  Widget _socialButton(IconData icon, Color color) {
-    return CircleAvatar(
-      radius: 25,
-      backgroundColor: color,
-      child: IconButton(
-        icon: Icon(icon, color: Colors.white),
-        onPressed: () {},
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        validator: validator ?? (value) => value == null || value.isEmpty ? 'Enter $label' : null,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon),
+          border: const OutlineInputBorder(),
+        ),
       ),
     );
   }

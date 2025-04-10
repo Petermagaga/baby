@@ -7,10 +7,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/babydiet/', include('babydiet.urls')),
     path('api/users/', include('users.urls')),
     path('api/tracker/', include('tracker.urls')),
     path("api/chat/", include("chat.urls")),
- 
+    path('api/immunization/', include('immunization.urls')),
+
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path("api/baby_tracking/", include("baby_tracking.urls")),
@@ -22,6 +24,7 @@ urlpatterns = [
     path('api/journal/',include('journal.urls')),
     path('api/mental_health/',include('mental_health.urls')),
     path('api/friends/',include('friends.urls')),
+
 ]
 
 if settings.DEBUG:
