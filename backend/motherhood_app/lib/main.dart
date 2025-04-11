@@ -77,7 +77,7 @@ class _MyAppState extends State<MyApp> {
             builder: (context) => ProfileScreen(
               toggleTheme: (args is Map<String, dynamic> && args.containsKey("toggleTheme"))
                   ? args["toggleTheme"]
-                  : (mode) {}, // Default function if toggleTheme is missing
+                  : () {}, // Default function if toggleTheme is missing
             ),
           );
         }

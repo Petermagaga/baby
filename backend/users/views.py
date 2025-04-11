@@ -83,7 +83,7 @@ class UserProfileUpdateView(generics.RetrieveUpdateAPIView):
         return get_object_or_404(UserProfile, username=username)
 
 
-class ProfileView(generics.RetrieveAPIView):
+class ProfileView(generics.RetrieveUpdateAPIView):
     """
     Retrieve user info by username.
     """
@@ -138,3 +138,19 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     """
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
+from rest_framework.permissions import IsAuthenticated
+
+class AuthenticatedUserProfileView(APIView):
+    """
+    Return the logged-in user's profile without needing a username.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            profile = UserProfile.objects.get(user=user)
+            serializer = UserProfileSerializer(profile)
+            return Response(serializer.data)
+        except UserProfile.DoesNotExist:
+            return Response({"error": "Profile not found!"}, status=404)
