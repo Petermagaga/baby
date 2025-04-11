@@ -25,7 +25,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Colors.purpleAccent[200],
       drawer: _buildSidebar(),
       appBar: AppBar(
         title: Text("Welcome back, ${user?.displayName ?? "User"}!"),

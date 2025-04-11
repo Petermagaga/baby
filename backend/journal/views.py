@@ -1,15 +1,11 @@
-from rest_framework import generics,permissions
-from django.shortcuts import render
+from rest_framework import generics
 from .serializers import PregnancyJournalSerializer
 from .models import PregnancyJournal
 
 class PregnancyJournalView(generics.ListCreateAPIView):
+    queryset = PregnancyJournal.objects.all().order_by('-date')  # 👈 show all
     serializer_class = PregnancyJournalSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return PregnancyJournal.objects.filter(user=self.request.user).order_by('-date')
+    permission_classes = []  # 👈 remove authentication
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
+        serializer.save(user=self.request.user)  

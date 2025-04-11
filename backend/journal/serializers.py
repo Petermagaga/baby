@@ -5,4 +5,4 @@ class PregnancyJournalSerializer(serializers.ModelSerializer):
     class Meta:
         model = PregnancyJournal
         fields = '__all__'
-        read_only_fields = ['user', 'date']
+        read_only_fields = ['date']

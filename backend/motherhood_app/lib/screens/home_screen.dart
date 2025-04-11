@@ -136,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const Icon(Icons.wb_sunny, color: Colors.orange, size: 28),
             const SizedBox(width: 10),
             Text(
-              "Hello, $userName! 👋",
+              "Hello, 👋",
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
           ],
@@ -190,24 +190,21 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ),
           ),
 
-          AnimatedBuilder(
-            animation: _wiggleAnimation,
-            builder: (context, child) {
-              return Positioned(
-                right: 10 + _wiggleAnimation.value,
+          Positioned(
+                right: 10,
                 top: MediaQuery.of(context).size.height / 2 - 30,
                 child: FloatingActionButton(
-                  backgroundColor: const Color.fromARGB(255, 176, 193, 20),
+                  backgroundColor: const Color.fromARGB(255, 89, 6, 52),
                   onPressed: () {
                     setState(() {
                       _isEmergencyOpen = !_isEmergencyOpen;
                     });
                   },
-                  child: const Icon(Icons.safety_check, size: 24),
+                  child: const Icon(Icons.emergency, size: 24),
                 ),
-              );
-            },
-          ),
+              ),
+            
+          
 
           if (_isEmergencyOpen)
             Positioned(

@@ -45,9 +45,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       drawer: _buildSidebar(context), // Sidebar with dynamic user data
       appBar: AppBar(
         title: Text(
-          "Welcome back, ${user?.displayName ?? "User"}!",
+          "Welcome back !",
         ), // ✅ Dynamic User Greeting
-        backgroundColor: Colors.green[700],
+        backgroundColor: Colors.purpleAccent[700],
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -95,7 +95,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 user?.photoURL ?? "https://via.placeholder.com/150",
               ),
             ),
-            decoration: BoxDecoration(color: Colors.green[700]),
+            decoration: BoxDecoration(color: Colors.purpleAccent[700]),
           ),
           _buildDrawerItem(Icons.home, "Home", () {
             setState(() {
