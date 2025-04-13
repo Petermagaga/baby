@@ -52,13 +52,11 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
             child: Column(
               children: [
-                // 👤 Avatar Animation
                 const CircleAvatar(
                   radius: 60,
-                  backgroundImage: AssetImage('assets/images/avatar.png'), // Replace with your image
+                  backgroundImage: AssetImage('assets/images/avatar.png'),
                 ),
                 const SizedBox(height: 20),
-
                 const Text(
                   "Welcome Back!",
                   style: TextStyle(
@@ -67,9 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(

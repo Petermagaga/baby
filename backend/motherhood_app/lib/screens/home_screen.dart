@@ -17,6 +17,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   bool _isChatOpen = false;
   bool _isEmergencyOpen = false;
 
+  String? username;
+  String? email;
+  String? profileImageUrl;
+
+
   late AnimationController _controller;
   late Animation<double> _wiggleAnimation;
 
@@ -28,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _fetchUserData();
+    _loadUserInfo();
 
     // Animation controller for wiggling effect
     _controller = AnimationController(
@@ -39,6 +45,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       CurvedAnimation(parent: _controller, curve: Curves.elasticInOut),
     );
   }
+
+
+  Future<void> _loadUserInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString('username') ?? '';
+      email = prefs.getString('email') ?? '';
+      profileImageUrl = prefs.getString('profileImage') ?? prefs.getString('profileImageUrl') ?? prefs.getString('profile_picture'); // If you stored it
+    
+      print("🧠 Username: $username");
+      print("📧 Email: $email");
+      print("🖼️ Profile Image URL: $profileImageUrl");
+    });
+  }
+
+
+
 
   @override
   void dispose() {
@@ -127,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     userName = userName[0].toUpperCase() + userName.substring(1);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5EDE1),
+      backgroundColor: const Color.fromARGB(255, 165, 221, 12),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -136,25 +159,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const Icon(Icons.wb_sunny, color: Colors.orange, size: 28),
             const SizedBox(width: 10),
             Text(
-              "Hello, 👋",
+              "Hello, ${username ?? "👋"}",
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle, color: Colors.black87, size: 30),
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              final token = prefs.getString("accessToken");
+        actions: [ 
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: GestureDetector(
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                final token = prefs.getString("accessToken");
 
-              if (token == null) {
-                Navigator.pushNamed(context, "/login");
-              } else {
-                Navigator.pushNamed(context, "/profile");
-              }
-            },
+                if (token == null) {
+                  Navigator.pushNamed(context, "/login");
+                } else {
+                  await Navigator.pushNamed(context, "/profile");
+                  _loadUserInfo();
+                }
+      },
+            child: profileImageUrl != null && profileImageUrl!.isNotEmpty
+                ? CircleAvatar(
+                    backgroundImage: NetworkImage(profileImageUrl!),
+                    radius: 18,
+                  )
+                : const Icon(Icons.account_circle, size: 30, color: Colors.black87),
           ),
+        ),
         ],
       ),
       body: Stack(

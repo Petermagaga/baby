@@ -12,28 +12,57 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 
 class AuthService {
-  static const String _loginUrl = "http://127.0.0.1:8000/api/token/";
+  static const String _loginUrl = "http://127.0.0.1:8000/api/users/login/";
   static const String _registerUrl = "http://127.0.0.1:8000/api/users/register/";
 
   // 🔐 LOGIN FUNCTION
-  Future<bool> login(String usernameOrEmail, String password) async {
-    final url = Uri.parse(_loginUrl);
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"username": usernameOrEmail, "password": password}),
-    );
+Future<bool> login(String usernameOrEmail, String password) async {
+  final url = Uri.parse("http://127.0.0.1:8000/api/users/login/");
+  final response = await http.post(
+    url,
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({
+      "username": usernameOrEmail,  // assuming you use email to login
+      "password": password,
+    }),
+  );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      await _saveToken(data["access"], data["refresh"]);
-      print("✅ Logged in: Access=${data["access"]}");
-      return true;
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+
+    final prefs = await SharedPreferences.getInstance();
+
+    // ✅ Save tokens
+    final access = data["tokens"]?["access"];
+    final refresh = data["tokens"]?["refresh"];
+
+    if (access != null && refresh != null) {
+      await prefs.setString("accessToken", access);
+      await prefs.setString("refreshToken", refresh);
     } else {
-      print("❌ Login failed: ${response.body}");
+      print("⚠️ Tokens missing in response");
       return false;
     }
+
+    // ✅ Save user info (optional, check for null)
+    final user = data["user"];
+    if (user != null && user is Map<String, dynamic>) {
+      await prefs.setString("username", user["username"] ?? "");
+      await prefs.setString("email", user["email"] ?? "");
+      await prefs.setString("profile_picture", user["profile_picture"] ?? "");
+      print("🧠 Saved user: ${user["username"]}");
+    } else {
+      print("⚠️ No user data in response");
+    }
+
+    print("✅ Login successful");
+    return true;
+  } else {
+    print("❌ Login failed: ${response.body}");
+    return false;
   }
+}
+
 
   // ✅ REGISTRATION FUNCTION WITH IMAGE UPLOAD TO FIREBASE
   Future<bool> register({

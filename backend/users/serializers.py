@@ -43,21 +43,21 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField()
+    username = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        email = data.get('email')
+        username = data.get('username')
         password = data.get('password')
 
-        if email and password:
-            user = authenticate(username=email, password=password)
+        if username and password:
+            user = authenticate(username=username, password=password)
             if not user:
-                raise serializers.ValidationError("Invalid email or password.")
+                raise serializers.ValidationError("Invalid username or password.")
             if not user.is_active:
                 raise serializers.ValidationError("This account is inactive.")
         else:
-            raise serializers.ValidationError("Both email and password are required.")
+            raise serializers.ValidationError("Both username and password are required.")
 
         data['user'] = user
         return data
@@ -90,4 +90,4 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'job_type',
             'profile_picture',
         ]
-        read_only_fields = ['email']  # Prevent email updates if required
+        read_only_fields = ['email']  

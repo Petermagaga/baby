@@ -10,7 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
   js: ^0.6.7
+ 
   url_launcher: ^6.1.14 
   cupertino_icons: ^1.0.2
   provider: ^6.1.0
@@ -39,4 +41,4 @@ flutter:
 
   # ✅ Add your asset path here
   assets:
-    - assets/default_profile.png
+    - assets/default_avatar.png

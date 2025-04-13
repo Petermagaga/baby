@@ -45,13 +45,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserProfile() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access') ?? "";
+    final token = prefs.getString('accessToken') ?? "";
+    print("🔐 TOKEN USED: Bearer $token");
 
     try {
       final dio = Dio();
       final response = await dio.get(
         'http://127.0.0.1:8000/api/users/me/', // ✅ update as per platform
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(headers: {
+          'Authorization': 'Bearer $token',
+          }),
       );
 
       final data = response.data;
@@ -67,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Optional: get profile completion
       final username = data['username'];
       final completionRes = await dio.get(
-        'http://127.0.0.1:8000/api/users/profile-completion/?username=$username',
+        'http://127.0.0.1:8000/api/users/profile/completion/?username=$username',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       setState(() {
@@ -86,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('access') ?? "";
+      final token = prefs.getString('accessToken') ?? "";
 
       final dio = Dio();
 
@@ -105,10 +108,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
       });
 
-      final response = await dio.post(
-        'http://127.0.0.1:8000/api/users/update-profile/',
+
+     
+      final response = await dio.patch(
+        'http://127.0.0.1:8000/api/users/profile/update/',
         data: formData,
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',}),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
