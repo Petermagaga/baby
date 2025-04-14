@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -12,9 +13,15 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   User? user;
 
+
+  String displayName = "Guest User";
+  String email = "No email found";
+  String profileImage = "https://via.placeholder.com/150";
+
   @override
   void initState() {
     super.initState();
+    Future.delayed(const Duration(milliseconds: 500), _loadUserInfo);
     FirebaseAuth.instance.authStateChanges().listen((User? updatedUser) {
       setState(() {
         user = updatedUser;
@@ -22,13 +29,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+Future<void> _loadUserInfo() async {
+  final prefs = await SharedPreferences.getInstance();
+  setState(() {
+    displayName = prefs.getString("username") ?? "Guest User";
+    email = prefs.getString("email") ?? "No email found";
+    profileImage = prefs.getString("profile_picture") ?? "https://via.placeholder.com/150";
+  });
+}
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.purpleAccent[200],
+      backgroundColor: Colors.redAccent[200],
       drawer: _buildSidebar(),
       appBar: AppBar(
-        title: Text("Welcome back, ${user?.displayName ?? "User"}!"),
+        title: Text("Bump2Baby, $displayName!"),
         backgroundColor: const Color.fromARGB(255, 159, 76, 165),
       ),
       body: Padding(
@@ -58,10 +78,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         children: [
           UserAccountsDrawerHeader(
-            accountName: Text(user?.displayName ?? "Guest User"),
-            accountEmail: Text(user?.email ?? "No email found"),
+            accountName: Text(displayName),
+            accountEmail: Text(email),
             currentAccountPicture: CircleAvatar(
-              backgroundImage: NetworkImage(user?.photoURL ?? "https://via.placeholder.com/150"),
+              backgroundImage: NetworkImage(profileImage),
             ),
             decoration: const BoxDecoration(color: Color.fromARGB(255, 222, 180, 15)),
           ),
