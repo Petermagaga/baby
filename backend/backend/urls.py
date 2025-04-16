@@ -24,7 +24,8 @@ urlpatterns = [
     path('api/journal/',include('journal.urls')),
     path('api/mental_health/',include('mental_health.urls')),
     path('api/friends/',include('friends.urls')),
-
+    path('api/chatmessage/',include('chatmessage.urls')),
+    path('api/pregnancy/', include('pregnancy.urls')),
 ]
 
 if settings.DEBUG:

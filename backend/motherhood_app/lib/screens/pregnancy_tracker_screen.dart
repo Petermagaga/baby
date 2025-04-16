@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart'; // ✅ Import API service
+import 'package:motherhood_app/models/nutrition_models.dart';
+import 'package:intl/intl.dart';
+
 
 class PregnancyTrackerScreen extends StatefulWidget {
   const PregnancyTrackerScreen({super.key});
@@ -13,25 +16,46 @@ class _PregnancyTrackerScreenState extends State<PregnancyTrackerScreen> {
   Map<String, dynamic>? weekData; // Store fetched week data
   List<dynamic> notifications = []; // Store user notifications
 
+
+
+  List<NutritionGuide> nutritionGuides = [];
+  List<DailyMeal> _mealPlans = [];
+
   @override
   void initState() {
     super.initState();
     fetchTrackerData();
     fetchNotifications();
+    fetchNutritionGuide();
+    loadMealPlans();
   }
 
-  /// ✅ Fetch Pregnancy Data from API
-  void fetchTrackerData() async {
-    var data = await ApiService.fetchPregnancyData();
-    if (mounted) {
-      setState(() {
-        currentWeek = data?['week'] ?? 1; // Default to week 1
-        weekData = data?['details'] ?? {};
-      });
+  Future<void> loadMealPlans() async {
+    try {
+      final meals = await ApiService.fetchDailyMealPlans(); // Fetch meal plans
+      if (mounted) {
+        setState(() {
+          _mealPlans = meals; // Set the fetched meals to _mealPlans
+        });
+      }
+    } catch (e) {
+      print("❌ Error loading meals: $e");
     }
   }
 
-  /// ✅ Fetch Notifications
+
+  void fetchNutritionGuide() async {
+    try {
+      String trimester = getTrimester(currentWeek);
+      var guides = await ApiService.fetchNutritionGuides(trimester);
+      if (mounted) {
+        setState(() => nutritionGuides = guides);
+      }
+    } catch (e) {
+      print('Nutrition fetch error: $e');
+    }
+  }
+
   void fetchNotifications() async {
     var data = await ApiService.fetchNotifications();
     if (mounted) {
@@ -39,6 +63,22 @@ class _PregnancyTrackerScreenState extends State<PregnancyTrackerScreen> {
         notifications = (data as List<dynamic>?) ?? [];
       });
     }
+  }
+
+  void fetchTrackerData() async {
+    var data = await ApiService.fetchPregnancyData();
+    if (mounted) {
+      setState(() {
+        currentWeek = data?['week'] ?? 1;
+        weekData = data?['details'] ?? {};
+      });
+    }
+  }
+
+  String getTrimester(int week) {
+    if (week <= 13) return "1";
+    if (week <= 26) return "2";
+    return "3";
   }
 
   @override
@@ -53,49 +93,56 @@ class _PregnancyTrackerScreenState extends State<PregnancyTrackerScreen> {
         padding: const EdgeInsets.all(16.0),
         child: weekData == null
             ? const Center(child: CircularProgressIndicator()) // Show loader until data loads
-            : Column(
+            : SingleChildScrollView(
+            child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ✅ Progress Indicator
-                  Text("Week $currentWeek of 40", 
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  // Progress Indicator, Baby's Growth, etc.
+                  Text("Week $currentWeek of 40", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
                   _buildProgressIndicator(),
-
                   const SizedBox(height: 20),
-
-                  // ✅ Baby's Growth
                   _buildCard(
                     title: "Your Baby's Growth",
                     content: weekData?['baby_growth'] ?? "Baby is growing beautifully!",
                     icon: Icons.child_care,
                   ),
-
-                  // ✅ Mother's Changes
                   _buildCard(
                     title: "Mother's Changes",
                     content: weekData?['mother_changes'] ?? "Expect some body changes this week.",
                     icon: Icons.pregnant_woman,
                   ),
-
-                  // ✅ Health Tips
                   _buildCard(
                     title: "Health Tips",
                     content: weekData?['health_tips'] ?? "Eat healthy and stay hydrated!",
                     icon: Icons.health_and_safety,
                   ),
-
                   const SizedBox(height: 20),
-
-                  // ✅ Notifications
                   if (notifications.isNotEmpty) _buildNotifications(),
+                  
+                      if (nutritionGuides.isNotEmpty)
+                          _buildCard(
+                            title: "Nutrition Guide (Trimester ${getTrimester(currentWeek)})",
+                            content: nutritionGuides.map((g) => g.recommendations).join("\n\n"),
+                            icon: Icons.restaurant_menu,
+                          ),
+
+
+                  // Add this section to display your meal plans
+                  if (_mealPlans.isNotEmpty)
+                      _buildCard(
+                        title: "Today's Meal Plan (${_mealPlans.first.date})",
+                        content:
+                            "🍳 Breakfast: ${_mealPlans.first.breakfast}\n🍛 Lunch: ${_mealPlans.first.lunch}\n🍲 Dinner: ${_mealPlans.first.dinner}",
+                        icon: Icons.fastfood,
+                      ),
+
                 ],
-              ),
+               ),   ),
       ),
     );
   }
 
-  /// ✅ Progress Indicator (Shows Pregnancy Progress)
   Widget _buildProgressIndicator() {
     return Column(
       children: [
@@ -114,7 +161,6 @@ class _PregnancyTrackerScreenState extends State<PregnancyTrackerScreen> {
     );
   }
 
-  /// ✅ Build Information Cards
   Widget _buildCard({required String title, required String content, required IconData icon}) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -141,13 +187,11 @@ class _PregnancyTrackerScreenState extends State<PregnancyTrackerScreen> {
     );
   }
 
-  /// ✅ Display Notifications
   Widget _buildNotifications() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Notifications", 
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.pinkAccent)),
+        Text("Notifications", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.pinkAccent)),
         const SizedBox(height: 5),
         ...notifications.map((notification) => Card(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

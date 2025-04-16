@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:motherhood_app/services/token_manager.dart'; // ✅ import your TokenManager
 
 class AuthService {
-  static const String baseUrl = "http://127.0.0.1:8000/api/users"; // ✅ API Base URL
+  static const String baseUrl = "http://127.0.0.1:8000/api/users";
   static const String tokenUrl = "http://127.0.0.1:8000/api/token/";
   static const String refreshUrl = "http://127.0.0.1:8000/api/token/refresh/";
 
-  // 🔹 Register User
   Future<bool> register(String username, String email, String password, {required String healthConditions}) async {
     final url = Uri.parse('$baseUrl/register/');
     final response = await http.post(
@@ -17,6 +16,7 @@ class AuthService {
         "username": username,
         "email": email,
         "password": password,
+        // Optionally add healthConditions here if your backend expects it
       }),
     );
 
@@ -29,24 +29,19 @@ class AuthService {
     }
   }
 
-  // 🔹 Login (JWT Authentication)
   Future<bool> login(String usernameOrEmail, String password) async {
-    final url = Uri.parse(tokenUrl);
     final response = await http.post(
-      url,
+      Uri.parse(tokenUrl),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "username": usernameOrEmail, // Change to "email" if needed
+        "username": usernameOrEmail,
         "password": password,
       }),
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      String accessToken = data["access"];
-      String refreshToken = data["refresh"];
-
-      await _saveToken(accessToken, refreshToken);
+      await TokenManager.setTokens(data["access"], data["refresh"]);
       print("✅ Login successful");
       return true;
     } else {
@@ -55,41 +50,22 @@ class AuthService {
     }
   }
 
-  // 🔹 Logout
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("accessToken");
-    await prefs.remove("refreshToken");
+    await TokenManager.clearTokens();
     print("✅ User logged out");
   }
 
-  // 🔹 Save Tokens
-  Future<void> _saveToken(String accessToken, String refreshToken) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("accessToken", accessToken);
-    await prefs.setString("refreshToken", refreshToken);
-  }
-
-  // 🔹 Retrieve Access Token
-  Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("auth_token");
-  }
-
-  // 🔹 Check Authentication Status
   Future<bool> isAuthenticated() async {
-    final token = await getValidToken(); // ✅ Use refreshed token if needed
+    final token = await getValidToken();
     return token != null;
   }
 
-  // 🔹 Refresh Token If Expired
   Future<String?> getValidToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    String? accessToken = prefs.getString("accessToken");
-    String? refreshToken = prefs.getString("refreshToken");
+    final accessToken = TokenManager.accessToken;
+    final refreshToken = TokenManager.refreshToken;
 
     if (accessToken != null) {
-      return accessToken; // ✅ Use existing token if still valid
+      return accessToken;
     }
 
     if (refreshToken == null) {
@@ -97,7 +73,6 @@ class AuthService {
       return null;
     }
 
-    // 🔄 Refresh token
     final response = await http.post(
       Uri.parse(refreshUrl),
       headers: {"Content-Type": "application/json"},
@@ -106,10 +81,9 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      String newAccessToken = data['access'];
-      await prefs.setString("accessToken", newAccessToken); // ✅ Save new token
+      await TokenManager.setTokens(data['access'], refreshToken);
       print("🔄 Token refreshed successfully");
-      return newAccessToken;
+      return data['access'];
     } else {
       print("❌ Token refresh failed: ${response.body}");
       return null;

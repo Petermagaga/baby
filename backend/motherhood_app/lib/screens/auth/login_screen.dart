@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:motherhood_app/screens/home_screen.dart';
 import '../../services/auth_service.dart';
+import 'package:motherhood_app/screens/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,10 +28,15 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = false);
 
     if (success) {
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => HomeScreen()),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login failed! Please check your credentials.")),
+        const SnackBar(
+          content: Text("Login failed! Please check your credentials."),
+        ),
       );
     }
   }
@@ -83,14 +90,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
-                        _buildTextField(_usernameController, 'Username', Icons.person),
+                        _buildTextField(
+                          _usernameController,
+                          'Username',
+                          Icons.person,
+                        ),
                         _buildTextField(
                           _passwordController,
                           'Password',
                           Icons.lock,
                           obscureText: true,
                           validator: (value) {
-                            if (value == null || value.isEmpty) return 'Enter your password';
+                            if (value == null || value.isEmpty)
+                              return 'Enter your password';
                             if (value.length < 6) return 'Minimum 6 characters';
                             return null;
                           },
@@ -99,29 +111,36 @@ class _LoginScreenState extends State<LoginScreen> {
                         _loading
                             ? const CircularProgressIndicator()
                             : SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: _login,
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    backgroundColor: const Color(0xFF4059F1),
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: _login,
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
                                   ),
-                                  child: const Text(
-                                    'Login',
-                                    style: TextStyle(fontSize: 18, color: Colors.white),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  backgroundColor: const Color(0xFF4059F1),
+                                ),
+                                child: const Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
+                            ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 TextButton(
-                  onPressed: () => Navigator.pushReplacementNamed(context, '/register'),
+                  onPressed:
+                      () =>
+                          Navigator.pushReplacementNamed(context, '/register'),
                   child: const Text(
                     "Don't have an account? Register",
                     style: TextStyle(color: Colors.white70),
@@ -147,7 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
-        validator: validator ?? (value) => value == null || value.isEmpty ? 'Enter $label' : null,
+        validator:
+            validator ??
+            (value) => value == null || value.isEmpty ? 'Enter $label' : null,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),

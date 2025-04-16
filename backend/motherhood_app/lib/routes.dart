@@ -6,8 +6,8 @@ import 'screens/dashboard_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/pregnancy_tracker_screen.dart';
 import 'screens/community_screen.dart';
-import 'screens/find_friend_screen.dart';
-import 'screens/chat_screen.dart';
+import 'screens/find_friend_screen.dart' as friend;
+import 'screens/chat_screen.dart' as chat;
 import 'screens/baby_tracker_screen.dart';
 import 'screens/immunization_screen.dart';
 import 'screens/update_baby_weight_screen.dart';
@@ -21,8 +21,8 @@ Map<String, WidgetBuilder> routes = {
   '/home': (context) => HomeScreen(),
   '/tracker': (context) => PregnancyTrackerScreen(),
   '/community': (context) => CommunityScreen(),
-  '/find_friend': (context) => FindFriendScreen(),
-  '/chat': (context) => ChatScreen(groupTitle: "Discussion Group"),
+  '/find_friend': (context) => friend.FindFriendScreen(),
+  '/chat': (context) => chat.ChatScreen(groupTitle: "Discussion Group"),
 
   '/baby_tracker': (context) => BabyTrackerScreen(),
   '/immunization': (context) => ImmunizationScreen(),

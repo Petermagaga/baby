@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:motherhood_app/screens/community_screen.dart' show CommunityScreen;
+// Import your AuthService and MatchedUser model
+import 'package:motherhood_app/services/auth_service.dart' as service;
+import 'package:motherhood_app/models/matched_user.dart' as models;
 
 class FindFriendScreen extends StatefulWidget {
   @override
@@ -9,7 +11,7 @@ class FindFriendScreen extends StatefulWidget {
 }
 
 class _FindFriendScreenState extends State<FindFriendScreen> {
-  List<dynamic> matchedUsers = [];
+  List<models.MatchedUser> matchedUsers = [];
   bool isLoading = true;
   bool hasError = false;
 
@@ -20,30 +22,33 @@ class _FindFriendScreenState extends State<FindFriendScreen> {
   }
 
   Future<void> _fetchMatchedUsers() async {
-    final String apiUrl = "http://127.0.0.1:8000/api/match_users/";
-    final String token = "your-jwt-token"; // Replace with actual token retrieval
-
     try {
-      final response = await http.get(
-        Uri.parse(apiUrl),
-        headers: {
-          "Authorization": "Bearer $token",
-          "Content-Type": "application/json",
-        },
-      );
+      final users = await service.AuthService().getMatchedUsers();
 
-      if (response.statusCode == 200) {
-        setState(() {
-          matchedUsers = json.decode(response.body);
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          hasError = true;
-          isLoading = false;
-        });
-      }
+      
+      
+      print("Fetched users: ${users.length}");
+      
+      setState(() {
+        matchedUsers = users;
+
+        // ✅ Add a fallback user if list is empty (only for development)
+        if (matchedUsers.isEmpty) {
+          matchedUsers = [
+           models. MatchedUser(
+              id: 999,
+              username: "TestFriend",
+              email: "test@mock.com",
+              location: "Test City",
+              distanceKm: 0.5,
+            ),
+          ];
+        }
+
+        isLoading = false;
+      });
     } catch (e) {
+      print("Error fetching users: $e");
       setState(() {
         hasError = true;
         isLoading = false;
@@ -65,40 +70,97 @@ class _FindFriendScreenState extends State<FindFriendScreen> {
       ),
       body: isLoading
           ? Center(
-              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.pinkAccent)),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.pinkAccent),
+              ),
             )
           : hasError
               ? Center(
                   child: Text(
                     "Error fetching data. Please try again!",
-                    style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.red),
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.red,
+                    ),
                   ),
                 )
-              : matchedUsers.isEmpty
-                  ? Center(
-                      child: Text(
-                        "No friends found nearby!",
-                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.pink.shade800),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: matchedUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = matchedUsers[index];
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.pinkAccent,
-                            child: Text(user["username"][0].toUpperCase(), style: TextStyle(color: Colors.white)),
+              : ListView.builder(
+                  itemCount: matchedUsers.length,
+                  itemBuilder: (context, index) {
+                    final user = matchedUsers[index];
+                    return Card(
+                      elevation: 3,
+                      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.pinkAccent,
+                          child: Text(
+                            user.username[0].toUpperCase(),
+                            style: TextStyle(color: Colors.white),
                           ),
-                          title: Text(user["username"], style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                          subtitle: Text("Distance: ${user['distance_km']} km"),
-                          trailing: Icon(Icons.message, color: Colors.pinkAccent),
-                          onTap: () {
-                            // Navigate to chat or profile screen
-                          },
-                        );
-                      },
-                    ),
+                        ),
+                        title: Text(
+                          user.username,
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text("Distance: ${user.distanceKm} km"),
+                        trailing: Icon(Icons.message, color: Colors.pinkAccent),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(user: user),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+      bottomNavigationBar: BottomAppBar(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CommunityScreen(),
+                ),
+              );
+            },
+            child: Text(
+              "Go to Community Screen",
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.pinkAccent),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ChatScreen extends StatelessWidget {
+  final models.MatchedUser user;
+
+  ChatScreen({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Chat with ${user.username}"),
+        backgroundColor: Colors.pinkAccent,
+        centerTitle: true,
+      ),
+      body: Center(
+        child: Text(
+          "Chatting with ${user.username}",
+          style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.w600),
+        ),
+      ),
     );
   }
 }

@@ -209,8 +209,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
 
           Positioned(
-            bottom: 20,
+            bottom: 90,
             right: 20,
+            left: 20,
             child: FloatingActionButton(
               backgroundColor: Colors.blueAccent,
               onPressed: () {
@@ -223,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
 
           Positioned(
-                right: 10,
+                left: 10,
                 top: MediaQuery.of(context).size.height / 2 - 30,
                 child: FloatingActionButton(
                   backgroundColor: const Color.fromARGB(255, 89, 6, 52),
@@ -232,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       _isEmergencyOpen = !_isEmergencyOpen;
                     });
                   },
-                  child: const Icon(Icons.emergency, size: 24),
+                  child: const Icon(Icons.phone, size: 24),
                 ),
               ),
             

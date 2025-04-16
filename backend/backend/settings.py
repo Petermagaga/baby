@@ -62,7 +62,8 @@ INSTALLED_APPS = [
     'friends',
     'immunization',
     'babydiet',
-   
+    'chatmessage',
+    'pregnancy'
 
 ]
 

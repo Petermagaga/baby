@@ -10,8 +10,41 @@ import 'package:path/path.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+import 'package:motherhood_app/models/matched_user.dart';
+
 
 class AuthService {
+
+  Future<List<MatchedUser>> getMatchedUsers() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString("accessToken");
+
+  if (token == null) {
+    throw Exception("Not authenticated");
+  }
+
+  final response = await http.get(
+    Uri.parse("http://127.0.0.1:8000/api/users/matches/"),
+    headers: {
+      "Authorization": "Bearer $token",
+      "Content-Type": "application/json",
+    },
+  );
+
+  if (response.statusCode == 200) {
+    final List<dynamic> data = json.decode(response.body);
+    return data.map((json) => MatchedUser.fromJson(json)).toList();
+  } else {
+    print("❌ Failed to fetch matched users: ${response.body}");
+    throw Exception("Failed to load matched users");
+  }
+}
+
+
+
+
+
+
   static const String _loginUrl = "http://127.0.0.1:8000/api/users/login/";
   static const String _registerUrl = "http://127.0.0.1:8000/api/users/register/";
 
@@ -30,15 +63,22 @@ Future<bool> login(String usernameOrEmail, String password) async {
   if (response.statusCode == 200) {
     final data = json.decode(response.body);
 
-    final prefs = await SharedPreferences.getInstance();
 
+
+    final prefs = await SharedPreferences.getInstance();
+    print("💾 BEFORE saving: ${prefs.getString("accessToken")}");
     // ✅ Save tokens
     final access = data["tokens"]?["access"];
     final refresh = data["tokens"]?["refresh"];
 
+        print("🔑 Access: $access");
+        print("🔑 Refresh: $refresh");
+
     if (access != null && refresh != null) {
       await prefs.setString("accessToken", access);
       await prefs.setString("refreshToken", refresh);
+
+      print("💾 AFTER saving: ${prefs.getString("accessToken")}");
     } else {
       print("⚠️ Tokens missing in response");
       return false;
@@ -51,6 +91,7 @@ Future<bool> login(String usernameOrEmail, String password) async {
       await prefs.setString("email", user["email"] ?? "");
       await prefs.setString("profile_picture", user["profile_picture"] ?? "");
       print("🧠 Saved user: ${user["username"]}");
+      print("✅ Token saved: $access");
     } else {
       print("⚠️ No user data in response");
     }

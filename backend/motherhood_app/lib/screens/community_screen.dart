@@ -1,5 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class AuthService {
+  Future<List<MatchedUser>> getMatchedUsers() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access'); // Assuming 'access' is the key you used to store JWT
+
+    if (token == null) {
+      print("No token found in SharedPreferences.");
+      return [];
+    }
+
+    final url = Uri.parse('https://127.0.0.1:8000/api/users/match-users/'); // Replace with your real URL
+
+    final res = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      return data.map((json) => MatchedUser.fromJson(json)).toList();
+    } else {
+      print("Error: ${res.statusCode}");
+      return [];
+    }
+  }
+}
+
 
 class CommunityScreen extends StatelessWidget {
   @override
@@ -33,7 +67,7 @@ class CommunityScreen extends StatelessWidget {
               SizedBox(height: 10),
               _animatedButton(
                 text: "Find a Friend Near Me",
-                onTap: () => Navigator.pushNamed(context, "/find_friend"),
+                onTap: () => _showMatchedUsers(context),
               ),
               SizedBox(height: 30),
               _sectionTitle("Join a Discussion"),
@@ -127,5 +161,55 @@ class DiscussionGroupTile extends StatelessWidget {
         );
       },
     );
+  }
+}
+class MatchedUser {
+  final int id;
+  final String username;
+  final double distanceKm;
+  final List<String> commonInterests;
+
+  MatchedUser({required this.id, required this.username, required this.distanceKm, required this.commonInterests});
+
+  factory MatchedUser.fromJson(Map<String, dynamic> json) {
+    return MatchedUser(
+      id: json['id'],
+      username: json['username'],
+      distanceKm: json['distance_km'].toDouble(),
+      commonInterests: List<String>.from(json['common_interests']),
+    );
+  }
+}
+void _showMatchedUsers(BuildContext context) async {
+  final response = await AuthService().getMatchedUsers(); // Defined next
+  if (response != null && response.isNotEmpty) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      builder: (context) {
+        return ListView.builder(
+          padding: EdgeInsets.all(16),
+          itemCount: response.length,
+          itemBuilder: (context, index) {
+            final user = response[index];
+            return Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              margin: EdgeInsets.symmetric(vertical: 8),
+              elevation: 4,
+              child: ListTile(
+                leading: Icon(Icons.person, color: Colors.pink),
+                title: Text(user.username, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                subtitle: Text(
+                  'Distance: ${user.distanceKm} km\nShared interests: ${user.commonInterests.join(", ")}',
+                  style: TextStyle(fontSize: 12),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No nearby friends found.")));
   }
 }
